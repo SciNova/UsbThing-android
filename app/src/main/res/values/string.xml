@@ -1,0 +1,6 @@
+<resources>
+    <string-array name="mcu_options">
+        <item>ATmega328P</item>
+        <item>ATmega2560</item>
+    </string-array>
+</resources>

@@ -1,6 +1,5 @@
 package net.scinova.usbthing;
 
-import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
@@ -9,9 +8,6 @@ import android.hardware.usb.UsbManager;
 import android.hardware.usb.UsbRequest;
 import android.util.Log;
 import java.nio.ByteBuffer;
-
-
-
 
 public class AVRProgrammer extends Programmer {
     private static final String TAG = "AVRProgrammer";
@@ -28,14 +24,10 @@ public class AVRProgrammer extends Programmer {
     private UsbEndpoint endpointOut;
     private UsbEndpoint endpointIn;
     private boolean isConnected = false;
-   private final MCUConfig.MCUType mcuType;
 
-
-    public AVRProgrammer(UsbManager usbManager, UsbDevice usbDevice, String mcuTypeString) {
+    public AVRProgrammer(UsbManager usbManager, UsbDevice usbDevice) {
         super(usbManager, usbDevice);
-        this.mcuType = MCUConfig.fromString(mcuTypeString);
     }
-
 
     @Override
     public boolean openConnection() {
@@ -54,15 +46,15 @@ public class AVRProgrammer extends Programmer {
                 return false;
             }
 
-for (int i = 0; i < dataInterface.getEndpointCount(); i++) {
-    UsbEndpoint endpoint = dataInterface.getEndpoint(i);
-    if (endpoint.getDirection() == UsbConstants.USB_DIR_OUT) {
-        endpointOut = endpoint;
-    } else if (endpoint.getDirection() == UsbConstants.USB_DIR_IN) {
-        endpointIn = endpoint;
-    }
-}
-
+            // Find endpoints
+            for (int i = 0; i < dataInterface.getEndpointCount(); i++) {
+                UsbEndpoint endpoint = dataInterface.getEndpoint(i);
+                if (endpoint.getDirection() == UsbEndpoint.DIRECTION_OUT) {
+                    endpointOut = endpoint;
+                } else if (endpoint.getDirection() == UsbEndpoint.DIRECTION_IN) {
+                    endpointIn = endpoint;
+                }
+            }
 
             if (endpointOut == null || endpointIn == null) {
                 reportError("Endpoints not found");
@@ -92,9 +84,6 @@ for (int i = 0; i < dataInterface.getEndpointCount(); i++) {
         return response != null && response.length >= 2 && response[0] == STK_GET_SYNC && response[1] == STK_OK;
     }
 
-
-
-
 @Override
 public boolean writeFirmware(byte[] firmwareData) {
     if (!isConnected) {
@@ -105,8 +94,7 @@ public boolean writeFirmware(byte[] firmwareData) {
     try {
         resetProgress();
         int totalBytes = firmwareData.length;
-
-        //MCUConfig.MCUType mcuType = MCUConfig.fromString(mcuType);
+        MCUConfig.MCUType mcuType = MCUConfig.fromString(selectedMCU);
         int chunkSize = mcuType.pageSize;
 
         for (int addr = 0; addr < totalBytes; addr += chunkSize) {
@@ -215,7 +203,7 @@ public boolean writeFirmware(byte[] firmwareData) {
                 };
                 sendCommand(addrCmd);
                 
-                byte[] readCmd = new byte[]{0x74, 0x00, (byte) 0x80, 0x46, 0x0D};
+                byte[] readCmd = new byte[]{0x74, 0x00, 0x80, 0x46, 0x0D};
                 sendCommand(readCmd);
                 
                 byte[] chunk = new byte[CHUNK_SIZE];
