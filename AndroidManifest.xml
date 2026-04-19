@@ -1,11 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 	<uses-feature android:name="android.hardware.usb.host" android:required="true" />
-	<uses-permission android:name="android.permission.USB_PERMISSION" />
-	<application android:label="UsbThing"
+	<application
+		android:name=".UsbThing"
+		android:label="UsbThing"
 		android:allowBackup="true"
 		android:supportsRtl="true"
 		android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
-		<activity android:name=".MainActivity" android:exported="true">
+		<activity
+			android:name=".DevicesView"
+			android:exported="true">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
