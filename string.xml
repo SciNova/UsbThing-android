@@ -2,5 +2,11 @@
     <string-array name="mcu_options">
         <item>ATmega328P</item>
         <item>ATmega2560</item>
+        <item>ESP32</item>
+        <item>ESP32-S3</item>
+    </string-array>
+    <string-array name="image_options">
+        <item>Blink 1 Hz</item>
+        <item>Blink 5 Hz</item>
     </string-array>
 </resources>

@@ -1,103 +1,71 @@
-An android java application for programming MCUs via USB (supporting usb serial and DFU). the app name is UsbThing, with domain name scinova.net, the project is build with gradle and openjdk on debian bookworm.
+# UsbThing
 
-A base class Programmer, with derived classes ESP32Programmer, STM32Programmer and AVRProgrammer.
+An Android application for programming MCUs over USB (usb-serial and DFU).
+Domain: scinova.net
 
-Main view is composed of a number of sections:
-1. An programmer selector from AVR/ESP32/STM32, the choice remembered persistently.
-2. A file selector that allows to select a file, display the selected filename and file size at the top of the section, and remember the file persistently. No permissions to external usb-storage is needed, as we are using the usb.
-3. a scrollable list of connected usb devices (list only the pid/vid). near each item there is a button, that displays the permission dialog, allowing to grant permission to that specific device. if permission is granted, the button will dissapear for that device. as there can be a number of connected devices, the user can select any device, and the button and permission dialog will be shown only for devices not already granted permission.
-4. a scrollable log section, that displays the logs, automatically scrolled to the bottom (to see the last log line). All classes should generate log messages for all the relevant events. for easy readability, we should call the method "log(message)".
-5. a info section, with a "info" button, that when pressed, will get detailed info from the selected device (for chips where it is possible to do so, not for avrs that do not expose such data). the type of the mcu and protocol is defined by the user selection, not by the actual hardware pid/vids. in the future, we could implement automatical mcu selection, but for now we can ignore if the actual hardware mismatches.
+## Architecture
 
+Base class `Programmer`, with derived `AVRProgrammer`, `ESP32Programmer`,
+`STM32Programmer`.
 
+## Main view
 
-# Android SDK Setup
+Five sections, stacked:
 
-## System
+1. **Programmer selector** — AVR / ESP32 / STM32. Choice persisted.
+2. **File selector** — select a file, show filename and size at the top of
+   the section, remember the file persistently. No external-storage
+   permission needed; the file comes in over USB.
+3. **Device list** — scrollable list of connected USB devices, showing
+   VID/PID only. Each device has a button that opens the permission dialog
+   for that device. Once permission is granted, the button disappears for
+   that device. With multiple devices connected, the user can select any
+   one; the button and dialog appear only for devices not yet granted.
+4. **Log** — scrollable, auto-scrolled to the bottom so the latest line is
+   visible. Every class logs its relevant events through a single
+   `log(message)` method.
+5. **Info** — an "Info" button that requests detailed info from the
+   selected device, for chips that expose it (not AV
 
-`/etc/profile.d/androidsdk.sh`:
+Rs). The MCU type
+   and protocol come from the user's selection, not from the connected
+   hardware's VID/PID. Automatic MCU detection is a future feature; for now
+   a hardware mismatch is ignored.
 
-```sh
-export ANDROID_SDK_ROOT=/usr/local/lib/android-sdk
-export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
-export PATH=$PATH:$ANDROID_SDK_ROOT/build-tools/34.0.0/bin
-export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
-```
+## Environment setup
 
-```sh
-apt install openjdk-21-jdk-headless
-```
+See `install.sh` (TODO: exact path and whether it also handles arduino-cli).
 
-## Android SDK
+Android SDK root: `/usr/local/lib/android-sdk`
+JDK: OpenJDK 21 (headless)
 
-Download: https://dl.google.com/android/repository/commandlinetools-linux-14742923_latest.zip
+## Build
 
-```sh
-unzip -j commandlinetools-linux-14742923_latest.zip -d /usr/local/lib/android-sdk/cmdline-tools/latest/
-```
+`make` builds the APK (and copies it to the public web dir); `make build/UsbThing-0.03.apk`
+builds it without publishing. The blink test images are compiled with `arduino-cli` for
+both boards: `blink*.hex` (Uno, `FQBN`) and `blink*_mega.hex` (Mega 2560, `FQBN_MEGA`).
 
-```sh
-sdkmanager --licenses
-sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-```
+`make test` runs the JVM unit tests for the STK500v2 framing (`Stk500v2.java`), no
+Android or hardware needed.
 
-```sh
-sdkmanager --list_installed
+## Protocols
 
+| MCU         | Bootloader protocol | Programmer          |
+|-------------|---------------------|---------------------|
+| ATmega328P  | STK500v1            | `AVRProgrammer`     |
+| ATmega2560  | STK500v2            | `AVRProgrammerV2`   |
 
-## Gradle
+`MCUConfig.createProgrammer` picks the programmer from the MCU's protocol.
 
-Download: https://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+STK500v2 notes (checked against the Arduino `stk500boot.c`):
+- Frame `1B SEQ SIZE_H SIZE_L 0E body XOR`. Reply body is `[cmd][status][payload]`.
+- Sync is `SIGN_ON` with seq 1; any well-formed reply counts, the string is only logged.
+- `ENTER_PROGMODE_ISP` is sent after sync; any well-formed reply is accepted.
+- `LOAD_ADDRESS` takes a 4-byte big-endian *word* address. Bit 31 (extended flag) is
+  set for the 2560 and is shifted out by the bootloader, so it is harmless.
+- `PROGRAM_FLASH_ISP` data starts at body offset 10. The bootloader erases the next
+  page on each write, so pages are written in order from address 0.
+- The top 8 KB of the 2560's flash is the bootloader; larger images are refused.
 
-```sh
-unzip -j gradle-8.10.2-bin.zip "gradle-8.10.2/bin/*" -d /usr/local/bin
-unzip gradle-8.10.2-bin.zip "gradle-8.10.2/lib/*" -d /usr/local/lib
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```/etc/profile.d/androidsdk.sh
-
-export ANDROID_SDK_ROOT=/usr/local/lib/android-sdk
-export PATH=$PATH:/usr/local/lib/android-sdk/cmdline-tools/latest/bin
-export PATH=$PATH:/usr/local/lib/android-sdk/build-tools/34.0.0/bin
-export PATH=$PATH:/usr/local/lib/android-sdk/platform-tools
-```
-
-
-openjdk-21-jdk-headless
-
-https://dl.google.com/android/repository/commandlinetools-linux-14742923_latest.zip
-
-https://services.gradle.org/distributions/gradle-8.10.2-bin.zip
-
-
-sdkmanager --licenses
-
-sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-
-gradle wrapper
-
-./gradlew assembleRelease
+Not yet tested on hardware: DTR/RTS reset timing on the Mega's USB-serial chip
+(ATmega16U2 or CH340), and the first real flash. The log shows which step failed.

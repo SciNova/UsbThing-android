@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- MCU Selection -->
+    <Spinner
+        android:id="@+id/spinner_mcu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:entries="@array/mcu_options"
+        android:padding="8dp"/>
+
+    <!-- Status Display -->
+    <TextView
+        android:id="@+id/txt_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="4dp"
+        android:textSize="16sp"/>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Image Selection -->
+    <Spinner
+        android:id="@+id/spinner_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:entries="@array/image_options"
+        android:padding="8dp"/>
+
+    <!-- Device List -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="8dp">
+        
+        <LinearLayout
+            android:id="@+id/deviceListContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </ScrollView>
+
+    <!-- Logging Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Logs:"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp"/>
+
+    <ScrollView
+        android:id="@+id/logScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:background="@android:color/darker_gray"
+        android:padding="4dp">
+
+        <TextView
+            android:id="@+id/txt_logs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical"
+            android:textSize="12sp"
+            android:textColor="@android:color/black"
+            android:fontFamily="monospace"/>
+    </ScrollView>
+
+    <!-- Program Button -->
+    <Button
+        android:id="@+id/btn_program"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Flash"
+        android:layout_marginTop="8dp"/>
+</LinearLayout>
