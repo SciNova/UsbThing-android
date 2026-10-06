@@ -1,4 +1,6 @@
-.PHONY: all debug clean test
+.PHONY: all debug clean test update-usbserial
+
+USBSERIAL_REPO ?= https://github.com/mik3y/usb-serial-for-android
 
 all: debug
 
@@ -94,6 +96,16 @@ test:
 		Stk500v2.java EspLoader.java $$(find test -name '*.java')
 	java -cp build/test:$(JUNIT_CP) org.junit.runner.JUnitCore \
 		net.scinova.usbthing.Stk500v2Test net.scinova.usbthing.EspLoaderTest
+
+# refresh the vendored usbserial/ library from upstream; review with git diff before committing
+update-usbserial:
+	rm -rf build/usbserial-update
+	git clone --depth 1 $(USBSERIAL_REPO) build/usbserial-update
+	rm -rf usbserial
+	mkdir -p usbserial
+	cp build/usbserial-update/LICENSE.txt usbserial/
+	cp -r build/usbserial-update/usbSerialForAndroid/src/main/java/com usbserial/com
+	rm -rf build/usbserial-update
 
 clean:
 	rm -rf build
