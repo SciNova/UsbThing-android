@@ -1,4 +1,4 @@
-.PHONY: all debug clean test update-usbserial
+.PHONY: all debug images clean test update-usbserial
 
 USBSERIAL_REPO ?= https://github.com/mik3y/usb-serial-for-android
 
@@ -20,8 +20,9 @@ FQBN_MEGA   ?= arduino:avr:mega:cpu=atmega2560
 FQBN_ESP32  ?= esp32:esp32:esp32
 FQBN_ESP32S3 ?= esp32:esp32:esp32s3
 SKETCHES    := blink1hz blink5hz
-HEXES       := $(SKETCHES:%=build/assets/%.hex) $(SKETCHES:%=build/assets/%_mega.hex) \
-               $(SKETCHES:%=build/assets/%_esp32.bin) $(SKETCHES:%=build/assets/%_esp32s3.bin)
+IMAGES_DIR  := images
+HEXES       := $(SKETCHES:%=$(IMAGES_DIR)/%.hex) $(SKETCHES:%=$(IMAGES_DIR)/%_mega.hex) \
+               $(SKETCHES:%=$(IMAGES_DIR)/%_esp32.bin) $(SKETCHES:%=$(IMAGES_DIR)/%_esp32s3.bin)
 
 JUNIT_CP    ?= /usr/local/lib/junit-4.13.2.jar:/usr/local/lib/hamcrest-core-1.3.jar
 
@@ -42,14 +43,19 @@ $(APK): build/classes.dex build/base.apk
 	rm -f build/unaligned.apk build/aligned.apk
 
 .SECONDEXPANSION:
-# test images, embedded as assets (plain .ino.hex, not the with_bootloader one)
-build/assets/%.hex: $$*/$$*.ino
-	mkdir -p build/assets
+# prebuilt firmware images, committed to the repo under images/ -- `make images`
+# builds them locally (e.g. in the DEBIAN-13-arduino container) and overwrites
+# that folder; the app build (on the VPS) just consumes what's already there,
+# it never rebuilds these itself.
+images: $(HEXES)
+
+$(IMAGES_DIR)/%.hex: $$*/$$*.ino
+	mkdir -p $(IMAGES_DIR)
 	$(ARDUINO_CLI) compile --fqbn $(FQBN) --output-dir build/sketch/$* $*
 	cp build/sketch/$*/$*.ino.hex $@
 
-build/assets/%_mega.hex: $$*/$$*.ino
-	mkdir -p build/assets
+$(IMAGES_DIR)/%_mega.hex: $$*/$$*.ino
+	mkdir -p $(IMAGES_DIR)
 	$(ARDUINO_CLI) compile --fqbn $(FQBN_MEGA) --output-dir build/sketch_mega/$* $*
 	cp build/sketch_mega/$*/$*.ino.hex $@
 
@@ -58,13 +64,13 @@ build/assets/%_mega.hex: $$*/$$*.ino
 # $(call ESP_TRIM,src,dst)
 ESP_TRIM = python3 -c "import sys; d=open(sys.argv[1],'rb').read().rstrip(b'\\xff'); open(sys.argv[2],'wb').write(d + b'\\xff' * (-len(d) % 4))" $(1) $(2)
 
-build/assets/%_esp32.bin: $$*/$$*.ino
-	mkdir -p build/assets
+$(IMAGES_DIR)/%_esp32.bin: $$*/$$*.ino
+	mkdir -p $(IMAGES_DIR)
 	$(ARDUINO_CLI) compile --fqbn $(FQBN_ESP32) --output-dir build/sketch_esp32/$* $*
 	$(call ESP_TRIM,build/sketch_esp32/$*/$*.ino.merged.bin,$@)
 
-build/assets/%_esp32s3.bin: $$*/$$*.ino
-	mkdir -p build/assets
+$(IMAGES_DIR)/%_esp32s3.bin: $$*/$$*.ino
+	mkdir -p $(IMAGES_DIR)
 	$(ARDUINO_CLI) compile --fqbn $(FQBN_ESP32S3) --output-dir build/sketch_esp32s3/$* $*
 	$(call ESP_TRIM,build/sketch_esp32s3/$*/$*.ino.merged.bin,$@)
 
@@ -74,12 +80,15 @@ build/res.zip: activity_main.xml devices.xml device.xml string.xml
 	for m in $(RESMAP); do mkdir -p build/res/$$(dirname $${m%%:*}); cp $${m##*:} build/res/$${m%%:*}; done
 	$(BT)/aapt2 compile --dir build/res -o $@
 
-build/base.apk: build/res.zip AndroidManifest.xml $(HEXES)
+build/base.apk: build/res.zip AndroidManifest.xml
+	for f in $(HEXES); do \
+		test -f $$f || { echo "missing $$f -- run 'make images' in a container that has the arduino cores, then commit it" >&2; exit 1; }; \
+	done
 	mkdir -p build/gen
 	$(BT)/aapt2 link -I $(JAR) --manifest AndroidManifest.xml \
 		--min-sdk-version 21 --target-sdk-version 34 \
 		--version-code 1 --version-name 0.03 \
-		-A build/assets --custom-package $(PKG) --java build/gen -o $@ build/res.zip
+		-A $(IMAGES_DIR) --custom-package $(PKG) --java build/gen -o $@ build/res.zip
 
 build/classes.dex: build/base.apk $(SOURCES)
 	rm -rf build/classes
