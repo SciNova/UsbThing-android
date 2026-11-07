@@ -21,7 +21,6 @@ public class ESP32Programmer extends Programmer {
     private static final int SYNC_TIMEOUT = 300;
     private static final int CMD_TIMEOUT = 3000;
     private static final int SYNC_TRIES = 10;
-    private static final int RESET_TRIES = 3;
     private static final int FLASH_OFFSET = 0;
     /** Espressif's VID/PID for the chips' built-in USB-Serial-JTAG peripheral. */
     private static final int USB_JTAG_VID = 0x303A;
@@ -64,13 +63,10 @@ public class ESP32Programmer extends Programmer {
             isConnected = true;
             port.setParameters(mcuType.bauds[0], 8, 1, UsbSerialPort.PARITY_NONE);
 
-            for (int i = 0; i < RESET_TRIES; i++) {
-                enterBootloader();
-                if (syncDevice()) {
-                    log("Synced with ROM bootloader");
-                    return checkChip() && attachFlash();
-                }
-                log("No sync (reset attempt " + (i + 1) + ")");
+            drain();
+            if (syncDevice()) {
+                log("Synced with ROM bootloader");
+                return checkChip() && attachFlash();
             }
             reportError("No response from ESP32 (is it in download mode?)");
             return false;
@@ -79,50 +75,6 @@ public class ESP32Programmer extends Programmer {
             reportError("Connection failed: " + e.getMessage());
             return false;
         }
-    }
-
-    private void enterBootloader() throws Exception {
-        log("Entering download mode via DTR/RTS" + (nativeUsb ? " (USB-Serial-JTAG)" : ""));
-        if (nativeUsb) {
-            usbJtagReset();
-        } else {
-            classicReset();
-        }
-        drain();
-    }
-
-    /**
-     * esptool's "classic reset". DTR drives IO0 and RTS drives EN through the board's
-     * auto-reset transistors, both inverted: asserted means low. EN is released while
-     * IO0 is held low, so the chip boots into the ROM download mode.
-     */
-    private void classicReset() throws Exception {
-        port.setDTR(false);  // IO0 high
-        port.setRTS(true);   // EN low: reset
-        Thread.sleep(100);
-        port.setDTR(true);   // IO0 low
-        port.setRTS(false);  // EN high: boot, sampling IO0
-        Thread.sleep(50);
-        port.setDTR(false);  // IO0 high again
-    }
-
-    /**
-     * esptool's USBJTAGSerialReset. The USB-Serial-JTAG peripheral decodes the DTR/RTS pair
-     * itself, so the pulse train is different: the pair must walk through (1,1) and not (0,0).
-     */
-    private void usbJtagReset() throws Exception {
-        port.setRTS(false);
-        port.setDTR(false);  // idle
-        Thread.sleep(100);
-        port.setDTR(true);   // IO0
-        port.setRTS(false);
-        Thread.sleep(100);
-        port.setRTS(true);   // reset
-        port.setDTR(false);
-        port.setRTS(true);
-        Thread.sleep(100);
-        port.setDTR(false);
-        port.setRTS(false);  // chip out of reset
     }
 
     /** Release EN with IO0 high so the chip runs the flashed application. */
