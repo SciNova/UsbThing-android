@@ -224,7 +224,7 @@ public class ESP32Programmer extends Programmer {
 
             int eraseTimeout = Math.max(CMD_TIMEOUT,
                     (int) ((long) total * ERASE_TIMEOUT_PER_MB / (1024 * 1024)));
-            boolean extendedBegin = mcuType == MCUConfig.MCUType.ESP32S3;
+            boolean extendedBegin = mcuType != MCUConfig.MCUType.ESP32;
             log("Erasing flash");
             if (command(EspLoader.CMD_FLASH_BEGIN,
                     EspLoader.flashBegin(total, blocks, block, FLASH_OFFSET, extendedBegin),
