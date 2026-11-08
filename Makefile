@@ -22,9 +22,7 @@ FQBN_ESP32S3 ?= esp32:esp32:esp32s3
 SKETCHES    := blink1hz blink5hz
 IMAGES_DIR  := images
 HEXES       := $(SKETCHES:%=$(IMAGES_DIR)/%.hex) $(SKETCHES:%=$(IMAGES_DIR)/%_mega.hex) \
-               $(SKETCHES:%=$(IMAGES_DIR)/%_esp32.bin)
-# esp32s3 dropped from HEXES until that core is installed somewhere; the
-# pattern rule below still works standalone once it's needed again.
+               $(SKETCHES:%=$(IMAGES_DIR)/%_esp32.bin) $(SKETCHES:%=$(IMAGES_DIR)/%_esp32s3.bin)
 
 JUNIT_CP    ?= /usr/local/lib/junit-4.13.2.jar:/usr/local/lib/hamcrest-core-1.3.jar
 
