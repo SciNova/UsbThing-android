@@ -245,10 +245,14 @@ final class EspLoader {
         return sb.toString();
     }
 
-    /** MD5 reply payload as hex: the ROM sends 32 ASCII digits, the stub 16 raw bytes. */
+    /**
+     * MD5 reply payload as hex: the ROM sends 32 ASCII digits, the stub 16 raw bytes. Some ROMs
+     * (seen on the C3) pad the ASCII form with extra trailing bytes, so take exactly 32 chars.
+     */
     static String md5Hex(byte[] payload) {
         if (payload.length == 16) return hex(payload);
-        return new String(payload, java.nio.charset.StandardCharsets.US_ASCII).toLowerCase();
+        String s = new String(payload, java.nio.charset.StandardCharsets.US_ASCII).toLowerCase();
+        return s.length() > 32 ? s.substring(0, 32) : s;
     }
 
     // ---- little endian ----
