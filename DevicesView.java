@@ -75,17 +75,13 @@ public class DevicesView extends Activity {
 			intent.setType("*/*");
 			startActivityForResult(intent, REQUEST_PICK_FILE);
 		});
-		// picking an MCU/image from the dropdowns falls back to the built-in test images
-		AdapterView.OnItemSelectedListener clearCustomFile = new AdapterView.OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(AdapterView<?> parent, View v, int pos, long id) {
-				clearCustomFile();
-			}
-			@Override
-			public void onNothingSelected(AdapterView<?> parent) {}
-		};
-		mcuSpinner.setOnItemSelectedListener(clearCustomFile);
-		imageSpinner.setOnItemSelectedListener(clearCustomFile);
+		// Picking an MCU/image from the dropdowns falls back to the built-in test images.
+		// Spinner fires a spurious onItemSelected (same position) when the activity regains
+		// focus after returning from another activity, e.g. the file picker -- so only treat
+		// it as a real user selection when the position actually changed. Each spinner needs
+		// its own listener instance so they don't share the "last position seen" state.
+		mcuSpinner.setOnItemSelectedListener(new ClearCustomFileOnChange());
+		imageSpinner.setOnItemSelectedListener(new ClearCustomFileOnChange());
 
 		app.logView = (TextView) findViewById(R.id.log);
 		app.logView.setText(app.logText);
@@ -136,6 +132,19 @@ public class DevicesView extends Activity {
 			customFileName = displayNameFor(customFileUri);
 			pickFileButton.setText("Flash file: " + customFileName);
 		}
+	}
+
+	private class ClearCustomFileOnChange implements AdapterView.OnItemSelectedListener {
+		private int lastPos = -1;
+		@Override
+		public void onItemSelected(AdapterView<?> parent, View v, int pos, long id) {
+			if (pos != lastPos) {
+				lastPos = pos;
+				clearCustomFile();
+			}
+		}
+		@Override
+		public void onNothingSelected(AdapterView<?> parent) {}
 	}
 
 	private void clearCustomFile() {
