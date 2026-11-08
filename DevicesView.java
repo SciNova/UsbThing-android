@@ -48,6 +48,7 @@ public class DevicesView extends Activity {
 	// The layout differs per chip, so each needs its own build of each image.
 	private static final String ESP32_ASSET_SUFFIX = "_esp32.bin";
 	private static final String ESP32S3_ASSET_SUFFIX = "_esp32s3.bin";
+	private static final String ESP32C3_ASSET_SUFFIX = "_esp32c3.bin";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +109,7 @@ private static String assetFor(MCUConfig.MCUType mcuType, int image) {
         case ATMEGA2560: return asset.replace(".hex", MEGA_ASSET_SUFFIX);
         case ESP32: return asset.replace(".hex", ESP32_ASSET_SUFFIX);
         case ESP32S3: return asset.replace(".hex", ESP32S3_ASSET_SUFFIX);
+        case ESP32C3: return asset.replace(".hex", ESP32C3_ASSET_SUFFIX);
         default: return asset;
     }
 }

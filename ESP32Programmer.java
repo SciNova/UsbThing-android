@@ -107,21 +107,28 @@ public class ESP32Programmer extends Programmer {
     }
 
     /**
-     * The selection is the user's, and the image layout differs per chip (the ESP32 bootloader
-     * lives at 0x1000, the S3's at 0x0), so refuse a mismatch instead of flashing a dead image.
-     * GET_SECURITY_INFO reports the chip id on the S3; the classic ESP32 ROM rejects the command.
+     * The selection is the user's, and the image layout differs per chip (the classic ESP32
+     * bootloader lives at 0x1000, the S3/C3's at 0x0), so refuse a mismatch instead of flashing
+     * a dead image. GET_SECURITY_INFO reports the chip id on the S3/C3; the classic ESP32 ROM
+     * rejects the command.
      */
     private boolean checkChip() throws Exception {
         EspLoader.Response r = send(EspLoader.CMD_GET_SECURITY_INFO, EspLoader.getSecurityInfo(), CMD_TIMEOUT);
         int chipId = r != null && r.ok() ? EspLoader.chipId(r.data) : -1;
-        boolean isS3 = chipId == EspLoader.CHIP_ID_ESP32S3;
-        log(isS3 ? "Chip: ESP32-S3" : chipId < 0 ? "Chip: ESP32 (no security info)" : "Chip id " + chipId);
-        boolean expectS3 = mcuType == MCUConfig.MCUType.ESP32S3;
-        if ((chipId >= 0 && !isS3) || isS3 != expectS3) {
-            reportError("Connected chip does not match the selected " + (expectS3 ? "ESP32-S3" : "ESP32"));
+        log(chipId < 0 ? "Chip: ESP32 (no security info)" : "Chip id " + chipId);
+        int expected = expectedChipId(mcuType);
+        if (chipId != expected) {
+            reportError("Connected chip does not match the selected " + mcuType);
             return false;
         }
         return true;
+    }
+
+    private static int expectedChipId(MCUConfig.MCUType mcuType) {
+        switch (mcuType) {
+            case ESP32S3: return EspLoader.CHIP_ID_ESP32S3;
+            case ESP32C3: return EspLoader.CHIP_ID_ESP32C3;
+            default: return -1; // classic ESP32 ROM rejects GET_SECURITY_INFO entirely
     }
 
     private boolean attachFlash() throws Exception {

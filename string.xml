@@ -4,6 +4,7 @@
         <item>ATmega2560</item>
         <item>ESP32</item>
         <item>ESP32-S3</item>
+        <item>ESP32-C3</item>
     </string-array>
     <string-array name="image_options">
         <item>Blink 1 Hz</item>

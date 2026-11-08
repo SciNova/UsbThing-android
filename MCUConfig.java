@@ -18,7 +18,8 @@ public class MCUConfig {
         // pageSize is the FLASH_DATA block size; flashSize is the smallest common module (4 MB)
         ESP32(Protocol.ESP_ROM, 0x400, 0x400000, new int[]{115200}),
         // native USB-Serial-JTAG ignores the baud rate
-        ESP32S3(Protocol.ESP_ROM, 0x400, 0x400000, new int[]{115200});
+        ESP32S3(Protocol.ESP_ROM, 0x400, 0x400000, new int[]{115200}),
+        ESP32C3(Protocol.ESP_ROM, 0x400, 0x400000, new int[]{115200});
 
         public final Protocol protocol;
         public final int pageSize;
@@ -39,6 +40,7 @@ public class MCUConfig {
             case "ATMEGA2560": return MCUType.ATMEGA2560;
             case "ESP32": return MCUType.ESP32;
             case "ESP32-S3": return MCUType.ESP32S3;
+            case "ESP32-C3": return MCUType.ESP32C3;
             default: throw new IllegalArgumentException("Unknown MCU type");
         }
     }

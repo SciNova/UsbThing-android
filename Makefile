@@ -19,10 +19,12 @@ FQBN        ?= arduino:avr:uno
 FQBN_MEGA   ?= arduino:avr:mega:cpu=atmega2560
 FQBN_ESP32  ?= esp32:esp32:esp32
 FQBN_ESP32S3 ?= esp32:esp32:esp32s3
+FQBN_ESP32C3 ?= esp32:esp32:esp32c3
 SKETCHES    := blink1hz blink5hz
 IMAGES_DIR  := images
 HEXES       := $(SKETCHES:%=$(IMAGES_DIR)/%.hex) $(SKETCHES:%=$(IMAGES_DIR)/%_mega.hex) \
-               $(SKETCHES:%=$(IMAGES_DIR)/%_esp32.bin) $(SKETCHES:%=$(IMAGES_DIR)/%_esp32s3.bin)
+               $(SKETCHES:%=$(IMAGES_DIR)/%_esp32.bin) $(SKETCHES:%=$(IMAGES_DIR)/%_esp32s3.bin) \
+               $(SKETCHES:%=$(IMAGES_DIR)/%_esp32c3.bin)
 
 JUNIT_CP    ?= /usr/local/lib/junit-4.13.2.jar:/usr/local/lib/hamcrest-core-1.3.jar
 
@@ -73,6 +75,11 @@ $(IMAGES_DIR)/%_esp32s3.bin: $$*/$$*.ino
 	mkdir -p $(IMAGES_DIR)
 	$(ARDUINO_CLI) compile --fqbn $(FQBN_ESP32S3) --output-dir build/sketch_esp32s3/$* $*
 	$(call ESP_TRIM,build/sketch_esp32s3/$*/$*.ino.merged.bin,$@)
+
+$(IMAGES_DIR)/%_esp32c3.bin: $$*/$$*.ino
+	mkdir -p $(IMAGES_DIR)
+	$(ARDUINO_CLI) compile --fqbn $(FQBN_ESP32C3) --output-dir build/sketch_esp32c3/$* $*
+	$(call ESP_TRIM,build/sketch_esp32c3/$*/$*.ino.merged.bin,$@)
 
 build/res.zip: activity_main.xml devices.xml device.xml string.xml
 	rm -rf build/res $@

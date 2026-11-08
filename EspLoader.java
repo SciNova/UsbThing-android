@@ -39,6 +39,7 @@ final class EspLoader {
 
     /** Chip id reported by GET_SECURITY_INFO on the ESP32-S3. */
     static final int CHIP_ID_ESP32S3 = 9;
+    static final int CHIP_ID_ESP32C3 = 5;
     /** flags (4), flash_crypt_cnt (1), key_purposes (7), then the chip id (4) */
     static final int SECURITY_INFO_CHIP_ID_OFFSET = 12;
 
