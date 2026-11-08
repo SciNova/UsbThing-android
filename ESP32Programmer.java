@@ -129,6 +129,7 @@ public class ESP32Programmer extends Programmer {
             case ESP32S3: return EspLoader.CHIP_ID_ESP32S3;
             case ESP32C3: return EspLoader.CHIP_ID_ESP32C3;
             default: return -1; // classic ESP32 ROM rejects GET_SECURITY_INFO entirely
+        }
     }
 
     private boolean attachFlash() throws Exception {
