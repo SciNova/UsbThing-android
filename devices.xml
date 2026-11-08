@@ -16,6 +16,12 @@
 		android:layout_height="wrap_content"
 		android:entries="@array/image_options" />
 
+	<Button
+		android:id="@+id/btn_pick_file"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:text="Flash file..." />
+
 	<ScrollView
 		android:layout_width="match_parent"
 		android:layout_height="0dp"

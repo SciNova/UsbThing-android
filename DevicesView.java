@@ -7,11 +7,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
+import android.database.Cursor;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -37,7 +41,11 @@ public class DevicesView extends Activity {
 	private BroadcastReceiver permissionReceiver;
 	private Spinner imageSpinner;
 	private Spinner mcuSpinner;
+	private Button pickFileButton;
 	private boolean flashing;
+	private Uri customFileUri;
+	private String customFileName;
+	private static final int REQUEST_PICK_FILE = 1;
 
 	// Built-in test images (built from the blink*/ sketches, embedded as assets).
 	// Order matches the image_options string array.
@@ -58,7 +66,26 @@ public class DevicesView extends Activity {
 		app = (UsbThing) getApplication();
 		imageSpinner = (Spinner) findViewById(R.id.spinner_image);
 		mcuSpinner = (Spinner) findViewById(R.id.spinner_mcu);
+		pickFileButton = (Button) findViewById(R.id.btn_pick_file);
 		app.devicesView = this;
+
+		pickFileButton.setOnClickListener(v -> {
+			Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+			intent.addCategory(Intent.CATEGORY_OPENABLE);
+			intent.setType("*/*");
+			startActivityForResult(intent, REQUEST_PICK_FILE);
+		});
+		// picking an MCU/image from the dropdowns falls back to the built-in test images
+		AdapterView.OnItemSelectedListener clearCustomFile = new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View v, int pos, long id) {
+				clearCustomFile();
+			}
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {}
+		};
+		mcuSpinner.setOnItemSelectedListener(clearCustomFile);
+		imageSpinner.setOnItemSelectedListener(clearCustomFile);
 
 		app.logView = (TextView) findViewById(R.id.log);
 		app.logView.setText(app.logText);
@@ -101,6 +128,31 @@ public class DevicesView extends Activity {
 		super.onDestroy();
 	}
 
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (requestCode == REQUEST_PICK_FILE && resultCode == Activity.RESULT_OK && data != null) {
+			customFileUri = data.getData();
+			customFileName = displayNameFor(customFileUri);
+			pickFileButton.setText("Flash file: " + customFileName);
+		}
+	}
+
+	private void clearCustomFile() {
+		customFileUri = null;
+		customFileName = null;
+		pickFileButton.setText("Flash file...");
+	}
+
+	private String displayNameFor(Uri uri) {
+		String name = uri.getLastPathSegment();
+		try (Cursor c = getContentResolver().query(uri, null, null, null, null)) {
+			int col = c != null ? c.getColumnIndex(OpenableColumns.DISPLAY_NAME) : -1;
+			if (c != null && col >= 0 && c.moveToFirst()) name = c.getString(col);
+		} catch (Exception e) { /* fall back to the last path segment */ }
+		return name;
+	}
+
 
 
 private static String assetFor(MCUConfig.MCUType mcuType, int image) {
@@ -127,6 +179,21 @@ private byte[] loadImage(MCUConfig.MCUType mcuType, String asset) throws IOExcep
     return HexFileParser.parse(getAssets().open(asset));
 }
 
+/** Like loadImage(), but reading a user-picked file: .hex is Intel hex, anything else is raw bytes. */
+private byte[] loadCustomFile(Uri uri, String name) throws IOException {
+    try (InputStream in = getContentResolver().openInputStream(uri)) {
+        if (in == null) throw new IOException("Could not open " + name);
+        if (name != null && name.toLowerCase().endsWith(".hex")) {
+            return HexFileParser.parse(in);
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+        return out.toByteArray();
+    }
+}
+
 private void flash(final Device d) {
     if (flashing) return;
     flashing = true;
@@ -135,12 +202,15 @@ private void flash(final Device d) {
     final String mcu = mcuSpinner.getSelectedItem().toString();
     final MCUConfig.MCUType mcuType = MCUConfig.fromString(mcu);
     final String asset = assetFor(mcuType, imageSpinner.getSelectedItemPosition());
+    final Uri fileUri = customFileUri;
+    final String fileName = customFileName;
     new Thread(() -> {
         boolean ok = false;
         Programmer programmer = null;
         try {
-            app.log(String.format("Flashing %s to %04X/%04X", asset, d.vid, d.pid));
-            byte[] firmware = loadImage(mcuType, asset);
+            String source = fileUri != null ? fileName : asset;
+            app.log(String.format("Flashing %s to %04X/%04X", source, d.vid, d.pid));
+            byte[] firmware = fileUri != null ? loadCustomFile(fileUri, fileName) : loadImage(mcuType, asset);
             app.log("Image size: " + firmware.length + " bytes");
 
             programmer = MCUConfig.createProgrammer(d.usbManager, d.androidDevice, mcu);
