@@ -4,24 +4,6 @@
 	android:orientation="vertical"
 	android:padding="16dp">
 
-	<Spinner
-		android:id="@+id/spinner_mcu"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:entries="@array/mcu_options" />
-
-	<Spinner
-		android:id="@+id/spinner_image"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:entries="@array/image_options" />
-
-	<Button
-		android:id="@+id/btn_pick_file"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:text="Flash file..." />
-
 	<ScrollView
 		android:layout_width="match_parent"
 		android:layout_height="0dp"
@@ -35,25 +17,118 @@
 
 	</ScrollView>
 
-	<ScrollView
-		android:layout_width="match_parent"
-		android:layout_height="0dp"
-		android:layout_weight="1">
-
-		<TextView
-			android:id="@+id/log"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:textAppearance="?android:attr/textAppearanceSmall"
-			android:textIsSelectable="true"
-			android:typeface="monospace" />
-
-	</ScrollView>
-
-	<Button
-		android:id="@+id/btn_copy_log"
+	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:text="Copy log" />
+		android:orientation="horizontal">
+
+		<Button
+			android:id="@+id/btn_mode_program"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="Program" />
+
+		<Button
+			android:id="@+id/btn_mode_monitor"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="Monitor" />
+
+	</LinearLayout>
+
+	<LinearLayout
+		android:id="@+id/program_view"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="3"
+		android:orientation="vertical">
+
+		<Spinner
+			android:id="@+id/spinner_mcu"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:entries="@array/mcu_options" />
+
+		<Spinner
+			android:id="@+id/spinner_image"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:entries="@array/image_options" />
+
+		<Button
+			android:id="@+id/btn_pick_file"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Flash file..." />
+
+		<Button
+			android:id="@+id/flashButton"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Flash"
+			android:visibility="gone" />
+
+		<ScrollView
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="1">
+
+			<TextView
+				android:id="@+id/log"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:textAppearance="?android:attr/textAppearanceSmall"
+				android:textIsSelectable="true"
+				android:typeface="monospace" />
+
+		</ScrollView>
+
+		<Button
+			android:id="@+id/btn_copy_log"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Copy log" />
+
+	</LinearLayout>
+
+	<LinearLayout
+		android:id="@+id/monitor_view"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="3"
+		android:orientation="vertical"
+		android:visibility="gone">
+
+		<Spinner
+			android:id="@+id/spinner_baud"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:entries="@array/baud_options"
+			android:visibility="gone" />
+
+		<ScrollView
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="1">
+
+			<TextView
+				android:id="@+id/monitor_output"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:textAppearance="?android:attr/textAppearanceSmall"
+				android:textIsSelectable="true"
+				android:typeface="monospace" />
+
+		</ScrollView>
+
+		<Button
+			android:id="@+id/btn_copy_monitor"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Copy output" />
+
+	</LinearLayout>
 
 </LinearLayout>
